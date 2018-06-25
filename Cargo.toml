@@ -1,0 +1,11 @@
+[package]
+name = "radio-at86rf212"
+description = "Driver for the Atmel AT86RF212 Sub 1GHz ISM band radio IC"
+version = "0.1.0"
+authors = ["Ryan Kurte <ryankurte@gmail.com>"]
+
+[dependencies]
+embedded-hal = { git="https://github.com/japaric/embedded-hal", features=["unproven"] }
+futures = "0.2.1"
+nb = "0.1.1"
+radio = { path = "../rust-radio" }
