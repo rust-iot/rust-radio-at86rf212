@@ -3,30 +3,6 @@
 
 #![allow(non_snake_case)]
 
-#[derive(Copy, Clone, Debug)]
-pub enum At86rf212Result {
-    /// Indicates success
-    RES_OK = 0,
-    /// Indicates completion
-    RES_DONE = 1,
-    /// Invalid driver object
-    DRIVER_INVALID = -1,
-    /// Driver returned error (TODO: allow reporting of driver error code)
-    ERROR_DRIVER = -2,
-    /// Communication error (SPI failure)
-    ERROR_COMMS = -3,
-    /// Length error (mismatch or length exceeds allowable)
-    ERROR_LEN = -4,
-    /// Command failed after MAX_RETRIES
-    ERROR_RETRIES = -5,
-    /// PLL locking error
-    ERROR_PLL = -6,
-    /// Digital voltage error
-    ERROR_DVDD = -7,
-    /// Analogue voltage error
-    ERROR_AVDD = -8,
-}
-
 // SPI control flags
 pub const REG_WRITE_FLAG: usize = (0xC0);
 pub const REG_READ_FLAG: usize = (0x80);
@@ -151,10 +127,11 @@ pub enum ClkmRate {
     CLKM_RATE_802_15_4_SYMBOL_RATE = 0x07,
 }
 
-pub const DEFAULT_CHANNEL: usize = 1;
+pub const DEFAULT_CHANNEL: u8 = 1;
 pub const DEFAULT_CCA_MODE: CCAMode = CCAMode::CCA_MODE_ENERGY;
-pub const DEFAULT_MINBE: usize = 3;
-pub const DEFAULT_MAXBE: usize = 5;
-pub const DEFAULT_MAX_CSMA_BACKOFFS: usize = 4;
-pub const PLL_LOCK_RETRIES: usize = 10;
-pub const STATE_CHANGE_RETRIES: usize = 10;
+pub const DEFAULT_MINBE: u8 = 3;
+pub const DEFAULT_MAXBE: u8 = 5;
+pub const DEFAULT_MAX_CSMA_BACKOFFS: u8 = 4;
+pub const PLL_LOCK_RETRIES: u8 = 10;
+pub const STATE_CHANGE_RETRIES: u8 = 10;
+pub const MAX_SPI_RETRIES: usize = 10;
