@@ -58,6 +58,7 @@ pub struct AT86RF212<SPI, OUTPUT, INPUT, DELAY> {
     sleep: OUTPUT,
     gpio: [Option<INPUT>; 4],
     delay: DELAY,
+    auto_crc: bool,
 }
 
 /// AT86RF212 configuration
@@ -74,7 +75,7 @@ where
 	DELAY: delay::DelayMs<usize>,
 {
     pub fn new(spi: SPI, reset: OUTPUT, cs: OUTPUT, sleep: OUTPUT, gpio: [Option<INPUT>; 4], delay: DELAY) -> Result<Self, At86rf212Error<E>> {
-        let mut at86rf212 = AT86RF212 { spi, reset, cs, sleep, gpio, delay };
+        let mut at86rf212 = AT86RF212 { spi, reset, cs, sleep, gpio, delay, auto_crc: true };
 
         at86rf212.sleep.set_low();
 
@@ -179,7 +180,7 @@ where
     /// Read a frame from the device
     pub fn read_frame<'a>(&mut self, data: &'a mut [u8]) -> Result<&'a [u8], At86rf212Error<E>> {
         // Setup read frame command
-        let cmd: [u8; 1] = [device::FRAME_READ_FLAG as u8];
+        let mut cmd: [u8; 1] = [device::FRAME_READ_FLAG as u8];
         // Assert CS
         self.cs.set_low();
         // Write command
@@ -207,7 +208,12 @@ where
     /// Write a frame to the device
     pub fn write_frame(&mut self, data: &[u8]) -> Result<(), At86rf212Error<E>> {
         // Setup write frame command
-        let cmd: [u8; 1] = [device::FRAME_WRITE_FLAG as u8];
+        let mut cmd: [u8; 2] = [device::FRAME_WRITE_FLAG as u8, 0];
+        if self.auto_crc {
+            cmd[1] = (data.len() + device::LEN_FIELD_LEN + device::CRC_LEN) as u8;
+        } else {
+            cmd[1] = (data.len() + device::LEN_FIELD_LEN) as u8;
+        }
         // Assert CS
         self.cs.set_low();
         // Write command
@@ -226,6 +232,17 @@ where
                 return Err(At86rf212Error::SPI(e));
             }
         };
+        // Add CRC padding if required
+        if self.auto_crc {
+            let crc = [0u8; device::CRC_LEN];
+            match self.spi.write(&crc) {
+                Ok(_r) => (),
+                Err(e) => {
+                    self.cs.set_high();
+                    return Err(At86rf212Error::SPI(e));
+                }
+            };
+        }
         // Clear CS
         self.cs.set_high();
 
@@ -350,16 +367,29 @@ where
         // Fetch frame length
         let mut buf = [0u8; 1];
         let len = self.read_frame(&mut buf)?[0] as usize;
-
+        // Check length is valid
         if len > device::MAX_LENGTH {
             return Err(At86rf212Error::InvalidLength(len));
         }
-
+        // Check length fits in provided data array
         if (len + device::LEN_FIELD_LEN + device::FRAME_RX_OVERHEAD) > data.len() {
             return Err(At86rf212Error::InvalidLength(len));
         }
-
+        // Read the frame
         self.read_frame(data)
+    }
+
+    pub fn start_tx(&mut self, data: &[u8]) -> Result<(), At86rf212Error<E>>{
+        // Disable TRX
+        self.set_state_blocking(TrxCmd::TRX_OFF)?;
+        // Clear IRQs
+        self.get_irq_status()?;
+        // Enable the PLL
+        self.enable_pll()?;
+        // Write data to buffer
+        self.write_frame(data)?;
+        // Set TX mode
+        self.set_state_blocking(TrxCmd::TX_START)
     }
 
 }
