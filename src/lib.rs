@@ -5,9 +5,8 @@
 
 #![no_std]
 #![feature(never_type)]
-#![feature(unproven)]
+
 extern crate embedded_hal as hal;
-extern crate futures;
 
 extern crate nb;
 
@@ -16,10 +15,11 @@ use hal::digital::{InputPin, OutputPin};
 use hal::spi::{Mode, Phase, Polarity};
 
 pub mod device;
-use device::{TrxCmd, TrxStatus, CCAMode};
+pub use device::{TrxCmd, TrxStatus, CCAMode, defaults};
 pub mod regs;
-use regs::{Register};
+pub use regs::{Register};
 
+// At86rf212 error types
 #[derive(Copy, Clone, Debug)]
 pub enum At86rf212Error<SPIError> {
     /// Communication error
@@ -61,12 +61,6 @@ pub struct AT86RF212<SPI, OUTPUT, INPUT, DELAY> {
     auto_crc: bool,
 }
 
-/// AT86RF212 configuration
-pub struct Config {
-    /// Radio frequency for communication
-    rf_freq_mhz: u16,
-}
-
 impl<E, SPI, OUTPUT, INPUT, DELAY> AT86RF212<SPI, OUTPUT, INPUT, DELAY>
 where
     SPI: spi::Transfer<u8, Error = E> + spi::Write<u8, Error = E>,
@@ -103,17 +97,17 @@ where
         }
 
         // Set default channel
-        at86rf212.set_channel(device::DEFAULT_CHANNEL)?;
+        at86rf212.set_channel(defaults::CHANNEL)?;
 
         // Set default CCA mode
-        at86rf212.set_cca_mode(device::DEFAULT_CCA_MODE)?;
+        at86rf212.set_cca_mode(defaults::CCA_MODE)?;
 
         // Enable CSMA-CA
         // Set binary exponentials
-        at86rf212.reg_write(Register::CSMA_BE, (device::DEFAULT_MINBE << regs::CSMA_BE_MIN_SHIFT) | ((device::DEFAULT_CCA_MODE as u8) << regs::CSMA_BE_MAX_SHIFT))?;
+        at86rf212.reg_write(Register::CSMA_BE, (defaults::MINBE << regs::CSMA_BE_MIN_SHIFT) | ((defaults::CCA_MODE as u8) << regs::CSMA_BE_MAX_SHIFT))?;
 
         // Set max CMSA retries
-        at86rf212.reg_update(Register::XAH_CTRL_0, regs::XAH_CTRL_MAX_CSMA_RETRIES_MASK, device::DEFAULT_MAX_CSMA_BACKOFFS << regs::XAH_CTRL_MAX_CSMA_RETRIES_SHIFT)?;
+        at86rf212.reg_update(Register::XAH_CTRL_0, regs::XAH_CTRL_MAX_CSMA_RETRIES_MASK, defaults::MAX_CSMA_BACKOFFS << regs::XAH_CTRL_MAX_CSMA_RETRIES_SHIFT)?;
 
         // Enable promiscuous mode auto ack
         at86rf212.reg_update(Register::XAH_CTRL_1, regs::XAH_CTRL_1_AACK_PROM_MODE_MASK, 1 << regs::XAH_CTRL_1_AACK_FLTR_RES_FT_MASK)?;
@@ -162,7 +156,7 @@ where
         self.cs.set_high();
         // Return result
         match res {
-            Ok(v) => Ok(()),
+            Ok(_) => Ok(()),
             Err(e) => Err(At86rf212Error::SPI(e)),
         }
     }
@@ -180,7 +174,7 @@ where
     /// Read a frame from the device
     pub fn read_frame<'a>(&mut self, data: &'a mut [u8]) -> Result<&'a [u8], At86rf212Error<E>> {
         // Setup read frame command
-        let mut cmd: [u8; 1] = [device::FRAME_READ_FLAG as u8];
+        let cmd: [u8; 1] = [device::FRAME_READ_FLAG as u8];
         // Assert CS
         self.cs.set_low();
         // Write command
@@ -257,7 +251,7 @@ where
     pub fn set_state_blocking(&mut self, state: device::TrxCmd) -> Result<(), At86rf212Error<E>> {
         self.reg_update(Register::TRX_STATE, regs::TRX_STATE_TRX_CMD_MASK, state as u8)?;
 
-        for _i in 0..device::MAX_SPI_RETRIES {
+        for _i in 0..defaults::MAX_SPI_RETRIES {
             let v = self.reg_read(Register::TRX_STATE)?;
             if (v & regs::TRX_STATUS_TRX_STATUS_MASK) != (TrxStatus::STATE_TRANSITION_IN_PROGRESS as u8) {
                 return Ok(());
@@ -327,6 +321,9 @@ where
         // Set to IDLE
         self.set_state_blocking(TrxCmd::TRX_OFF)?;
 
+        // Set channel
+        self.set_channel(channel)?;
+
         // Clear interrupts
         self.get_irq_status()?;
 
@@ -344,7 +341,7 @@ where
         self.set_state_blocking(TrxCmd::PLL_ON)?;
 
         // Await PLL lock (IRQ)
-        for _i in 0 .. device::MAX_SPI_RETRIES {
+        for _i in 0 .. defaults::MAX_SPI_RETRIES {
             let v = self.get_irq_status()?;
             if (v & regs::IRQ_STATUS_IRQ_0_PLL_LOCK_MASK) != 0 {
                 return Ok(())
@@ -392,12 +389,4 @@ where
         self.set_state_blocking(TrxCmd::TX_START)
     }
 
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
 }

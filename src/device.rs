@@ -1,7 +1,7 @@
 //! AT86RF212 Radio Driver
 //! Copyright 2018 Ryan Kurte
 
-#![allow(non_snake_case)]
+#![allow(non_camel_case_types)]
 
 // SPI control flags
 pub const REG_WRITE_FLAG: usize = (0xC0);
@@ -127,11 +127,15 @@ pub enum ClkmRate {
     CLKM_RATE_802_15_4_SYMBOL_RATE = 0x07,
 }
 
-pub const DEFAULT_CHANNEL: u8 = 1;
-pub const DEFAULT_CCA_MODE: CCAMode = CCAMode::CCA_MODE_ENERGY;
-pub const DEFAULT_MINBE: u8 = 3;
-pub const DEFAULT_MAXBE: u8 = 5;
-pub const DEFAULT_MAX_CSMA_BACKOFFS: u8 = 4;
-pub const PLL_LOCK_RETRIES: u8 = 10;
-pub const STATE_CHANGE_RETRIES: u8 = 10;
-pub const MAX_SPI_RETRIES: usize = 10;
+pub mod defaults {
+    use super::CCAMode;
+
+    pub const CHANNEL: u8 = 1;
+    pub const CCA_MODE: CCAMode = CCAMode::CCA_MODE_ENERGY;
+    pub const MINBE: u8 = 3;
+    pub const MAXBE: u8 = 5;
+    pub const MAX_CSMA_BACKOFFS: u8 = 4;
+    pub const PLL_LOCK_RETRIES: u8 = 10;
+    pub const STATE_CHANGE_RETRIES: u8 = 10;
+    pub const MAX_SPI_RETRIES: usize = 10;
+}

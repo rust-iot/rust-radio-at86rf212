@@ -1,7 +1,7 @@
 //! AT86RF212 Radio Driver
 //! Copyright 2018 Ryan Kurte
 
-#![allow(non_snake_case)]
+#![allow(non_camel_case_types)]
 
 /// Register base addresses
 pub const REG_BASE_ADDR: u8 = (0x00);
@@ -9,6 +9,7 @@ pub const REG_BASE_ADDR: u8 = (0x00);
 pub const AES_BASE_ADDR: u8 = (0x80);
 
 /// AT86RF212 Register Enumeration
+
 #[derive(Copy, Clone, Debug)]
 pub enum Register {
     TRX_STATUS = 0x01,   // TRX_STATUS register address
