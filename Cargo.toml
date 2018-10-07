@@ -7,7 +7,6 @@ authors = ["Ryan Kurte <ryankurte@gmail.com>"]
 [dependencies]
 embedded-hal = { git="https://github.com/japaric/embedded-hal", features=["unproven"] }
 nb = "0.1.1"
-radio = { path = "../rust-radio" }
 
 [dev-dependencies]
 linux-embedded-hal = "0.2.0"

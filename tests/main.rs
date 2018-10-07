@@ -72,7 +72,7 @@ fn test_devices() {
     let val = radio.read_reg(Register::CSMA_BE)
         .expect("Failed reading CSMA_BE register");
     assert_eq!(defaults::MINBE, (val >> 0) & 0x0f, "MINBE");
-    assert_eq!(defaults::MAXBE, (val >> 4) & 0x0f. "MAXBE");
+    assert_eq!(defaults::MAXBE, (val >> 4) & 0x0f, "MAXBE");
 
     let val = radio.read_reg(Register::XAH_CTRL_0)
         .expect("Failed reading XAH_CTRL_0 register");
