@@ -1,20 +1,21 @@
 use std::env;
 
-extern crate embedded-hal;
+extern crate embedded_hal;
 
-extern crate linux-embedded-hal;
+extern crate linux_embedded_hal;
 use linux_embedded_hal::{Spidev, Pin, Delay};
 
-extern crate radio-at86rf212;
-use radio_at86rf212::{AT86RF212, Register, TRxCmd};
+extern crate shared_bus;
+use shared_bus::BusManager;
+
+extern crate radio_at86rf212;
+use radio_at86rf212::{AT86RF212, Register, TrxCmd, TrxStatus};
 use radio_at86rf212::device::defaults;
 
 #[test]
 fn test_devices() {
-    let spi0_name = env::var("RADIO0_SPI")
-        .expect("RADIO0_SPI environmental variable undefined");
-    let spi1_name = env::var("RADIO1_SPI")
-        .expect("RADIO1_SPI environmental variable undefined");
+    let spi_name = env::var("RADIO_SPI")
+        .expect("RADIO_SPI environmental variable undefined");
 
     let cs0_name = env::var("RADIO0_CS")
         .expect("RADIO0_CS environmental variable undefined");
@@ -33,10 +34,8 @@ fn test_devices() {
 
     println!("Connecting to peripherals");
 
-    let mut spi0 = Spidev::open(spi0_name)
-        .expect("Failed to open SPI0");
-    let mut spi1 = Spidev::open(spi1_name)
-        .expect("Failed to open SPI0");
+    let mut spi = Spidev::open(spi_name)
+        .expect("Failed to open SPI");
 
     let mut cs0 = Pin::from_path(cs0_name)
         .expect("Failed to open CS0");
@@ -55,10 +54,15 @@ fn test_devices() {
 
 
     println!("Connecting to devices");
+    
+    // Create shared bus manager
+    let manager = BusManager::<std::sync::Mutex<_>, _>::new(spi);
 
+    let mut spi0 = manager.acquire();
     let mut radio0 = AT86RF212::new(spi0, reset0, cs0, sleep0, [None; 4], Delay{})
         .expect("Failed to initialise radio0");
 
+    let mut spi1 = manager.acquire();
     let mut radio0 = AT86RF212::new(spi1, reset1, cs1, sleep1, [None; 4], Delay{})
         .expect("Failed to initialise radio0");
 
@@ -88,7 +92,7 @@ fn test_devices() {
     assert_eq!(1, (val >> 1) & 0x01, "IRQ mask mode");
 
 
-    println!("Testing set state")
+    println!("Testing set state");
 
     radio0.set_state_blocking(TrxCmd::RX_ON)
         .expect("Failed setting state to RX");
