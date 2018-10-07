@@ -23,7 +23,7 @@ pub const CRC_LEN: usize = 2;
 pub const FRAME_RX_OVERHEAD: usize = 3;
 
 // TRX commands
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TrxCmd {
     NOP = 0x00,           // No-op for reading SPI status (configurable)
     TX_START = 0x02,      // Start TX
@@ -38,7 +38,7 @@ pub enum TrxCmd {
 }
 
 // TRX status
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TrxStatus {
     P_ON = 0x00,               // pub constant P_ON for sub-register @ref SR_TRX_STATUS
     BUSY_RX = 0x01,            // Busy receiving
@@ -58,7 +58,7 @@ pub enum TrxStatus {
 }
 
 // TRAC Status (Advanced mode)
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TrxTracStatus {
     TRAC_SUCCESS = 0,                // AACK or ARET successful
     TRAC_SUCCESS_DATA_PENDING = 1,   // ARET ACK frame received with pending flag set
@@ -69,7 +69,7 @@ pub enum TrxTracStatus {
 }
 
 // TAL states
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TALStates {
     TAL_IDLE = 0,
     TAL_TX_AUTO = 1,
@@ -77,7 +77,7 @@ pub enum TALStates {
 }
 
 // CCA Mode
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum CCAMode {
     CCA_MODE_CS_OR_ENERGY = 0,  // Carrier sense OR energy above threshold
     CCA_MODE_ENERGY = 1,        // Energy above threshold
@@ -86,14 +86,14 @@ pub enum CCAMode {
 }
 
 // Modulation mode
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Modulation {
     MODULATION_BPSK = 0,  // BPSK modulation
     MODULATION_OQPSK = 2, // OQPSK modulation
 }
 
 // OQPSK Data Rate
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum OqpskDataRate {
     OQPSK_DATA_RATE_0_100K_1_250K = 0, // Data rate where SUB_MODE 0 100K, 1 250K
     OQPSK_DATA_RATE_0_200K_1_500K = 1, // Data rate where SUB_MODE 0 200K, 1 500K
@@ -102,7 +102,7 @@ pub enum OqpskDataRate {
 }
 
 // IRQ flags
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum IRQ {
     IRQ_NONE = 0x00,
     IRQ_0_PLL_LOCK = 0x01,
@@ -115,7 +115,7 @@ pub enum IRQ {
     IRQ_7_BAT_LOW = 0x80,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ClkmRate {
     CLKM_RATE_NONE = 0x00,
     CLKM_RATE_1MHZ = 0x01,
