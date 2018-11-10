@@ -51,25 +51,23 @@ pub const MODE: Mode = Mode {
 };
 
 /// AT86RF212 device object
-pub struct AT86RF212<SPI, OUTPUT, INPUT, DELAY> {
+pub struct AT86RF212<SPI, OUTPUT, DELAY> {
     spi: SPI,
     reset: OUTPUT,
     cs: OUTPUT,
     sleep: OUTPUT,
-    gpio: [Option<INPUT>; 4],
     delay: DELAY,
     auto_crc: bool,
 }
 
-impl<E, SPI, OUTPUT, INPUT, DELAY> AT86RF212<SPI, OUTPUT, INPUT, DELAY>
+impl<E, SPI, OUTPUT, DELAY> AT86RF212<SPI, OUTPUT, DELAY>
 where
     SPI: spi::Transfer<u8, Error = E> + spi::Write<u8, Error = E>,
     OUTPUT: OutputPin,
-    INPUT: InputPin,
-	DELAY: delay::DelayMs<usize>,
+    DELAY: delay::DelayMs<u32>,
 {
-    pub fn new(spi: SPI, reset: OUTPUT, cs: OUTPUT, sleep: OUTPUT, gpio: [Option<INPUT>; 4], delay: DELAY) -> Result<Self, At86rf212Error<E>> {
-        let mut at86rf212 = AT86RF212 { spi, reset, cs, sleep, gpio, delay, auto_crc: true };
+    pub fn new(spi: SPI, reset: OUTPUT, cs: OUTPUT, sleep: OUTPUT, delay: DELAY) -> Result<Self, At86rf212Error<E>> {
+        let mut at86rf212 = AT86RF212 { spi, reset, cs, sleep, delay, auto_crc: true };
 
         at86rf212.sleep.set_low();
 

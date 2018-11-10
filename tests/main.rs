@@ -2,7 +2,7 @@ use std::env;
 
 extern crate embedded_hal;
 use embedded_hal::digital::{InputPin, OutputPin};
-use embedded_hal::delay::DelayMs;
+use embedded_hal::blocking::delay::DelayMs;
 
 extern crate linux_embedded_hal;
 use linux_embedded_hal::{Spidev, Pin, Delay};
@@ -56,16 +56,16 @@ fn test_devices() {
 
 
     println!("Connecting to devices");
-    
+   
     // Create shared bus manager
     let manager = shared_bus::BusManager::<std::sync::Mutex<_>, _>::new(spi);
 
     let mut spi0 = manager.acquire();
-    let mut radio0 = AT86RF212::new(spi0, reset0, cs0, sleep0, [None; 4], Delay{})
+    let mut radio0 = AT86RF212::new(spi0, reset0, cs0, sleep0, Delay{})
         .expect("Failed to initialise radio0");
 
     let mut spi1 = manager.acquire();
-    let mut radio0 = AT86RF212::new(spi1, reset1, cs1, sleep1, [None; 4], Delay{})
+    let mut radio0 = AT86RF212::new(spi1, reset1, cs1, sleep1, Delay{})
         .expect("Failed to initialise radio0");
 
 
@@ -75,12 +75,12 @@ fn test_devices() {
         .expect("Failed reading PHY_CC_CCA register");
     assert_eq!((val >> 5 ) & 0x03, 1, "CCA mode");
 
-    let val = radio0.read_reg(Register::CSMA_BE)
+    let val = radio0.reg_read(Register::CSMA_BE)
         .expect("Failed reading CSMA_BE register");
     assert_eq!(defaults::MINBE, (val >> 0) & 0x0f, "MINBE");
     assert_eq!(defaults::MAXBE, (val >> 4) & 0x0f, "MAXBE");
 
-    let val = radio0.read_reg(Register::XAH_CTRL_0)
+    let val = radio0.reg_read(Register::XAH_CTRL_0)
         .expect("Failed reading XAH_CTRL_0 register");
     assert_eq!(defaults::MAX_CSMA_BACKOFFS, (val >> 1) & 0x07, "CSMA backoffs");
 
@@ -101,14 +101,14 @@ fn test_devices() {
 
     let val = radio0.get_state()
         .expect("Failed fetching radio state");
-    assert_eq!(TrxStatus::RX_ON, val, "Radio state (RX)");
+    assert_eq!(TrxStatus::RX_ON as u8, val, "Radio state (RX)");
 
     radio0.set_state_blocking(TrxCmd::TRX_OFF)
         .expect("Failed setting state to TRX_OFF");
 
     let val = radio0.get_state()
         .expect("Failed fetching radio state");
-    assert_eq!(TrxStatus::TRX_OFF, val, "Radio state (TRX_OFF)");
+    assert_eq!(TrxStatus::TRX_OFF as u8, val, "Radio state (TRX_OFF)");
 
 
     
