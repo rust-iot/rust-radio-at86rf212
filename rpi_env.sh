@@ -1,6 +1,7 @@
 # RPI AT86RF212 test peripheral configuration
 
 export RADIO0_SPI=/dev/spidev0.0
+export RADIO1_SPI=/dev/spidev0.1
 
 export RADIO0_RESET=/sys/class/gpio4
 export RADIO1_RESET=/sys/class/gpio5
