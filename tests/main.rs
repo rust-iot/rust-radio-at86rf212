@@ -6,6 +6,7 @@ use embedded_hal::blocking::delay::DelayMs;
 
 extern crate linux_embedded_hal;
 use linux_embedded_hal::{Spidev, Pin, Delay};
+use linux_embedded_hal::spidev::{SpidevOptions, SPI_MODE_0};
 
 extern crate shared_bus;
 use shared_bus::BusManager;
@@ -16,8 +17,11 @@ use radio_at86rf212::device::defaults;
 
 #[test]
 fn test_devices() {
-    let spi_name = env::var("RADIO_SPI")
-        .expect("RADIO_SPI environmental variable undefined");
+    let spi0_name = env::var("RADIO0_SPI")
+        .expect("RADIO0_SPI environmental variable undefined");
+
+    let spi1_name = env::var("RADIO1_SPI")
+	.expect("RADIO1_SPI environmental variable undefined");
 
     let cs0_name = env::var("RADIO0_CS")
         .expect("RADIO0_CS environmental variable undefined");
@@ -36,8 +40,11 @@ fn test_devices() {
 
     println!("Connecting to peripherals");
 
-    let mut spi = Spidev::open(spi_name)
-        .expect("Failed to open SPI");
+    let mut spi0 = Spidev::open(spi0_name)
+        .expect("Failed to open SPI0");
+
+    let mut spi1 = Spidev::open(spi1_name)
+	.expect("Failed to open SPI1");
 
     let mut cs0 = Pin::from_path(cs0_name)
         .expect("Failed to open CS0");
@@ -54,17 +61,27 @@ fn test_devices() {
     let mut sleep1 = Pin::from_path(sleep1_name)
         .expect("Failed to open SLEEP1");
 
+    println!("Configuring peripherals");
+ 
+    let options = SpidevOptions::new()
+         .bits_per_word(8)
+         .max_speed_hz(20_000)
+         .mode(SPI_MODE_0)
+         .build();
+
+    spi0.configure(&options).unwrap();
+    spi1.configure(&options).unwrap();
 
     println!("Connecting to devices");
    
     // Create shared bus manager
-    let manager = shared_bus::BusManager::<std::sync::Mutex<_>, _>::new(spi);
+    //let manager = shared_bus::BusManager::<std::sync::Mutex<_>, _>::new(spi);
 
-    let mut spi0 = manager.acquire();
+    //let mut spi0 = manager.acquire();
     let mut radio0 = AT86RF212::new(spi0, reset0, cs0, sleep0, Delay{})
         .expect("Failed to initialise radio0");
 
-    let mut spi1 = manager.acquire();
+    //let mut spi1 = manager.acquire();
     let mut radio0 = AT86RF212::new(spi1, reset1, cs1, sleep1, Delay{})
         .expect("Failed to initialise radio0");
 
