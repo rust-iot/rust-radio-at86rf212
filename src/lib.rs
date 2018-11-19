@@ -69,6 +69,7 @@ where
     pub fn new(spi: SPI, reset: OUTPUT, cs: OUTPUT, sleep: OUTPUT, delay: DELAY) -> Result<Self, At86rf212Error<E>> {
         let mut at86rf212 = AT86RF212 { spi, reset, cs, sleep, delay, auto_crc: true };
 
+        // Disable slee mode
         at86rf212.sleep.set_low();
 
         // Reset pulse
@@ -90,7 +91,7 @@ where
 
         // Check digital voltage is ok
         let v = at86rf212.reg_read(Register::VREG_CTRL)?;
-        if v & regs::VREG_CTRL_DVREG_EXT_MASK == 0 {
+        if v & regs::VREG_CTRL_DVDD_OK_MASK == 0 {
             return Err(At86rf212Error::DigitalVoltage);
         }
 
