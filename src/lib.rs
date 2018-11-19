@@ -109,7 +109,7 @@ where
         at86rf212.reg_update(Register::XAH_CTRL_0, regs::XAH_CTRL_MAX_CSMA_RETRIES_MASK, defaults::MAX_CSMA_BACKOFFS << regs::XAH_CTRL_MAX_CSMA_RETRIES_SHIFT)?;
 
         // Enable promiscuous mode auto ack
-        at86rf212.reg_update(Register::XAH_CTRL_1, regs::XAH_CTRL_1_AACK_PROM_MODE_MASK, 1 << regs::XAH_CTRL_1_AACK_FLTR_RES_FT_MASK)?;
+        at86rf212.reg_update(Register::XAH_CTRL_1, regs::XAH_CTRL_1_AACK_PROM_MODE_MASK, 1 << regs::XAH_CTRL_1_AACK_FLTR_RES_FT_SHIFT)?;
 
         // Enable auto-crc for transmit mode
         at86rf212.reg_update(Register::TRX_CTRL_1, regs::TRX_CTRL1_TX_AUTO_CRC_ON_MASK, 1 << regs::TRX_CTRL1_TX_AUTO_CRC_ON_SHIFT)?;

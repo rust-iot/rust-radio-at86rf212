@@ -1,6 +1,8 @@
 use std::env;
 
 extern crate embedded_hal;
+use embedded_hal::prelude::*;
+use embedded_hal::digital::OutputPin;
 
 extern crate linux_embedded_hal;
 use linux_embedded_hal::{Spidev, Pin, Delay};
@@ -41,19 +43,19 @@ fn test_devices() {
     let mut spi1 = Spidev::open(spi1_name)
 	    .expect("Failed to open SPI1");
 
-    let cs0 = Pin::from_path(cs0_name)
+    let mut cs0 = Pin::from_path(cs0_name)
         .expect("Failed to open CS0");
-    let cs1 = Pin::from_path(cs1_name)
+    let mut cs1 = Pin::from_path(cs1_name)
         .expect("Failed to open CS1");
 
-    let reset0 = Pin::from_path(reset0_name)
+    let mut reset0 = Pin::from_path(reset0_name)
         .expect("Failed to open RESET0");
-    let reset1 = Pin::from_path(reset1_name)
+    let mut reset1 = Pin::from_path(reset1_name)
         .expect("Failed to open RESET1");
 
-    let sleep0 = Pin::from_path(sleep0_name)
+    let mut sleep0 = Pin::from_path(sleep0_name)
         .expect("Failed to open SLEEP0");
-    let sleep1 = Pin::from_path(sleep1_name)
+    let mut sleep1 = Pin::from_path(sleep1_name)
         .expect("Failed to open SLEEP1");
 
     println!("Configuring peripherals");
