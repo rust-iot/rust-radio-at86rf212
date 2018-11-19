@@ -1,8 +1,6 @@
 use std::env;
 
 extern crate embedded_hal;
-use embedded_hal::digital::{InputPin, OutputPin};
-use embedded_hal::blocking::delay::DelayMs;
 
 extern crate linux_embedded_hal;
 use linux_embedded_hal::{Spidev, Pin, Delay};
@@ -41,21 +39,21 @@ fn test_devices() {
         .expect("Failed to open SPI0");
 
     let mut spi1 = Spidev::open(spi1_name)
-	.expect("Failed to open SPI1");
+	    .expect("Failed to open SPI1");
 
-    let mut cs0 = Pin::from_path(cs0_name)
+    let cs0 = Pin::from_path(cs0_name)
         .expect("Failed to open CS0");
-    let mut cs1 = Pin::from_path(cs1_name)
+    let cs1 = Pin::from_path(cs1_name)
         .expect("Failed to open CS1");
 
-    let mut reset0 = Pin::from_path(reset0_name)
+    let reset0 = Pin::from_path(reset0_name)
         .expect("Failed to open RESET0");
-    let mut reset1 = Pin::from_path(reset1_name)
+    let reset1 = Pin::from_path(reset1_name)
         .expect("Failed to open RESET1");
 
-    let mut sleep0 = Pin::from_path(sleep0_name)
+    let sleep0 = Pin::from_path(sleep0_name)
         .expect("Failed to open SLEEP0");
-    let mut sleep1 = Pin::from_path(sleep1_name)
+    let sleep1 = Pin::from_path(sleep1_name)
         .expect("Failed to open SLEEP1");
 
     println!("Configuring peripherals");
@@ -71,16 +69,11 @@ fn test_devices() {
 
     println!("Connecting to devices");
    
-    // Create shared bus manager
-    //let manager = shared_bus::BusManager::<std::sync::Mutex<_>, _>::new(spi);
-
-    //let mut spi0 = manager.acquire();
     let mut radio0 = AT86RF212::new(spi0, reset0, cs0, sleep0, Delay{})
         .expect("Failed to initialise radio0");
 
-    //let mut spi1 = manager.acquire();
     let mut radio0 = AT86RF212::new(spi1, reset1, cs1, sleep1, Delay{})
-        .expect("Failed to initialise radio0");
+        .expect("Failed to initialise radio1");
 
 
     println!("Test initial configuration");
