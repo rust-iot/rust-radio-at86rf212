@@ -14,12 +14,10 @@ features = ["unproven"]
 [dev-dependencies]
 linux-embedded-hal = "0.2.0"
 
-[dev-dependencies.shared-bus]
-version = "0.1.4"
-features = ["std"]
+[dev-dependencies.i2cdev]
+version = "0.4.1"
 
 [patch.crates-io]
-i2cdev = { path = "../rust-i2cdev" }
 embedded-hal = { git = "https://github.com/rust-embedded/embedded-hal" }
 linux-embedded-hal = { git = "https://github.com/rust-embedded/linux-embedded-hal" }
 

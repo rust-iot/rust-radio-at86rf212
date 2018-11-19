@@ -8,9 +8,6 @@ extern crate linux_embedded_hal;
 use linux_embedded_hal::{Spidev, Pin, Delay};
 use linux_embedded_hal::spidev::{SpidevOptions, SPI_MODE_0};
 
-extern crate shared_bus;
-use shared_bus::BusManager;
-
 extern crate radio_at86rf212;
 use radio_at86rf212::{AT86RF212, Register, TrxCmd, TrxStatus};
 use radio_at86rf212::device::defaults;

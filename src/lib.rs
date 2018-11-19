@@ -11,7 +11,7 @@ extern crate embedded_hal as hal;
 extern crate nb;
 
 use hal::blocking::{spi, delay};
-use hal::digital::{InputPin, OutputPin};
+use hal::digital::{OutputPin};
 use hal::spi::{Mode, Phase, Polarity};
 
 pub mod device;
