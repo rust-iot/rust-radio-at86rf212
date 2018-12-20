@@ -74,11 +74,11 @@ where
 
         // Reset pulse
         at86rf212.reset.set_low();
-        at86rf212.delay.delay_ms(1);
+        at86rf212.delay.delay_ms(10);
         at86rf212.reset.set_high();
         
         // Wait for init
-        at86rf212.delay.delay_ms(10);
+        at86rf212.delay.delay_ms(20);
 
         // Check communication
         let who = at86rf212.reg_read(Register::PART_NUM)?;
@@ -103,13 +103,13 @@ where
 
         // Enable CSMA-CA
         // Set binary exponentials
-        at86rf212.reg_write(Register::CSMA_BE, (defaults::MINBE << regs::CSMA_BE_MIN_SHIFT) | ((defaults::CCA_MODE as u8) << regs::CSMA_BE_MAX_SHIFT))?;
+        at86rf212.reg_write(Register::CSMA_BE, (defaults::MINBE << regs::CSMA_BE_MIN_SHIFT) | ((defaults::MAXBE as u8) << regs::CSMA_BE_MAX_SHIFT))?;
 
         // Set max CMSA retries
         at86rf212.reg_update(Register::XAH_CTRL_0, regs::XAH_CTRL_MAX_CSMA_RETRIES_MASK, defaults::MAX_CSMA_BACKOFFS << regs::XAH_CTRL_MAX_CSMA_RETRIES_SHIFT)?;
 
         // Enable promiscuous mode auto ack
-        at86rf212.reg_update(Register::XAH_CTRL_1, regs::XAH_CTRL_1_AACK_PROM_MODE_MASK, 1 << regs::XAH_CTRL_1_AACK_FLTR_RES_FT_SHIFT)?;
+        at86rf212.reg_update(Register::XAH_CTRL_1, regs::XAH_CTRL_1_AACK_PROM_MODE_MASK, 1 << regs::XAH_CTRL_1_AACK_PROM_MODE_SHIFT)?;
 
         // Enable auto-crc for transmit mode
         at86rf212.reg_update(Register::TRX_CTRL_1, regs::TRX_CTRL1_TX_AUTO_CRC_ON_MASK, 1 << regs::TRX_CTRL1_TX_AUTO_CRC_ON_SHIFT)?;

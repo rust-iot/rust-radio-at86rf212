@@ -74,10 +74,6 @@ fn test_devices() {
     let mut radio0 = AT86RF212::new(spi0, reset0, cs0, sleep0, Delay{})
         .expect("Failed to initialise radio0");
 
-    let mut radio0 = AT86RF212::new(spi1, reset1, cs1, sleep1, Delay{})
-        .expect("Failed to initialise radio1");
-
-
     println!("Test initial configuration");
 
     let val = radio0.reg_read(Register::PHY_CC_CCA)
@@ -95,7 +91,7 @@ fn test_devices() {
 
     let val = radio0.reg_read(Register::XAH_CTRL_1)
         .expect("Failed reading XAH_CTRL_1 register");
-    assert_eq!(1, (val >> 1) & 0x0, "Promiscuous mode");
+    assert_eq!(1, (val >> 1) & 0x01, "Promiscuous mode auto ack enabled");
 
     let val = radio0.reg_read(Register::TRX_CTRL_1)
         .expect("Failed reading XAH_CTRL_1 register");
@@ -120,6 +116,5 @@ fn test_devices() {
     assert_eq!(TrxStatus::TRX_OFF as u8, val, "Radio state (TRX_OFF)");
 
 
-    
 
 }
