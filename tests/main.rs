@@ -1,8 +1,6 @@
 use std::env;
 
 extern crate embedded_hal;
-use embedded_hal::prelude::*;
-use embedded_hal::digital::OutputPin;
 
 extern crate linux_embedded_hal;
 use linux_embedded_hal::{Spidev, Pin, Delay};
@@ -40,22 +38,22 @@ fn test_devices() {
     let mut spi0 = Spidev::open(spi0_name)
         .expect("Failed to open SPI0");
 
-    let mut spi1 = Spidev::open(spi1_name)
+    let _spi1 = Spidev::open(spi1_name)
 	    .expect("Failed to open SPI1");
 
-    let mut cs0 = Pin::from_path(cs0_name)
+    let cs0 = Pin::from_path(cs0_name)
         .expect("Failed to open CS0");
-    let mut cs1 = Pin::from_path(cs1_name)
+    let _cs1 = Pin::from_path(cs1_name)
         .expect("Failed to open CS1");
 
-    let mut reset0 = Pin::from_path(reset0_name)
+    let reset0 = Pin::from_path(reset0_name)
         .expect("Failed to open RESET0");
-    let mut reset1 = Pin::from_path(reset1_name)
+    let _reset1 = Pin::from_path(reset1_name)
         .expect("Failed to open RESET1");
 
-    let mut sleep0 = Pin::from_path(sleep0_name)
+    let sleep0 = Pin::from_path(sleep0_name)
         .expect("Failed to open SLEEP0");
-    let mut sleep1 = Pin::from_path(sleep1_name)
+    let _sleep1 = Pin::from_path(sleep1_name)
         .expect("Failed to open SLEEP1");
 
     println!("Configuring peripherals");
@@ -67,7 +65,7 @@ fn test_devices() {
          .build();
 
     spi0.configure(&options).unwrap();
-    spi1.configure(&options).unwrap();
+    //spi1.configure(&options).unwrap();
 
     println!("Connecting to devices");
    

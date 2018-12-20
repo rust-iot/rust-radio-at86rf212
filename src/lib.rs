@@ -4,7 +4,6 @@
 //! Copyright 2018 Ryan Kurte
 
 #![no_std]
-#![feature(never_type)]
 
 extern crate embedded_hal as hal;
 
