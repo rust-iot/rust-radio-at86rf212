@@ -4,6 +4,8 @@
 //! Copyright 2018 Ryan Kurte
 
 use std::env;
+use std::thread;
+use std::time::Duration;
 
 extern crate embedded_hal;
 
@@ -123,11 +125,31 @@ fn test_devices() {
 
 
     println!("Testing send/receive");
+    
+    // Start RX
     radio0.start_rx(0).expect("Error starting receive");
     let val = radio0.get_state().expect("Failed fetching radio state");
     assert_eq!(TrxStatus::RX_ON as u8, val, "Radio state (RX_ON)");
 
-    // TODO
+    // Start send
+    radio1.start_tx(&[0x11, 0x22, 0x33]).expect("Error starting TX");
 
+    // Poll on tx and rx complete
+    let mut sent = false;
+    let mut received = false;
+    for _i in 0..10 {
+        if radio0.check_tx_rx().expect("Failed checking radio rx complete") {
+            println!("Receive complete");
+            received = true;
+        }
+        if radio1.check_tx_rx().expect("Failed checking radio tx complete") {
+            println!("Send complete");
+            sent = true;
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
+
+    assert!(sent, "Send not completed");
+    assert!(received, "Receive not completed")
 
 }
