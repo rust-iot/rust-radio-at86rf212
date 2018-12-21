@@ -1,6 +1,9 @@
 //! AT86RF212 Radio Driver
+//! Driver / Core
+//! 
 //! See also: 
 //! - https://github.com/ryankurte/libat86rf212
+//! 
 //! Copyright 2018 Ryan Kurte
 
 #![no_std]

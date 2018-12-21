@@ -1,3 +1,8 @@
+//! AT86RF212 Radio Driver 
+//! HITL testing
+//! 
+//! Copyright 2018 Ryan Kurte
+
 use std::env;
 
 extern crate embedded_hal;

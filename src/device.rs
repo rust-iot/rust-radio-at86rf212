@@ -1,4 +1,6 @@
 //! AT86RF212 Radio Driver
+//! Device Definitions
+//! 
 //! Copyright 2018 Ryan Kurte
 
 #![allow(non_camel_case_types)]
