@@ -38,22 +38,22 @@ fn test_devices() {
     let mut spi0 = Spidev::open(spi0_name)
         .expect("Failed to open SPI0");
 
-    let _spi1 = Spidev::open(spi1_name)
+    let mut spi1 = Spidev::open(spi1_name)
 	    .expect("Failed to open SPI1");
 
     let cs0 = Pin::from_path(cs0_name)
         .expect("Failed to open CS0");
-    let _cs1 = Pin::from_path(cs1_name)
+    let cs1 = Pin::from_path(cs1_name)
         .expect("Failed to open CS1");
 
     let reset0 = Pin::from_path(reset0_name)
         .expect("Failed to open RESET0");
-    let _reset1 = Pin::from_path(reset1_name)
+    let reset1 = Pin::from_path(reset1_name)
         .expect("Failed to open RESET1");
 
     let sleep0 = Pin::from_path(sleep0_name)
         .expect("Failed to open SLEEP0");
-    let _sleep1 = Pin::from_path(sleep1_name)
+    let sleep1 = Pin::from_path(sleep1_name)
         .expect("Failed to open SLEEP1");
 
     println!("Configuring peripherals");
@@ -65,12 +65,15 @@ fn test_devices() {
          .build();
 
     spi0.configure(&options).unwrap();
-    //spi1.configure(&options).unwrap();
+    spi1.configure(&options).unwrap();
 
     println!("Connecting to devices");
    
     let mut radio0 = AT86RF212::new(spi0, reset0, cs0, sleep0, Delay{})
         .expect("Failed to initialise radio0");
+
+    let mut radio1 = AT86RF212::new(spi1, reset1, cs1, sleep1, Delay{})
+	.expect("Failed to initialise radio1");
 
     println!("Test initial configuration");
 
@@ -113,6 +116,13 @@ fn test_devices() {
         .expect("Failed fetching radio state");
     assert_eq!(TrxStatus::TRX_OFF as u8, val, "Radio state (TRX_OFF)");
 
+
+    println!("Testing send/receive");
+    radio0.start_rx(0).expect("Error starting receive");
+    let val = radio0.get_state().expect("Failed fetching radio state");
+    assert_eq!(TrxStatus::RX_ON as u8, val, "Radio state (RX_ON)");
+
+    // TODO
 
 
 }
