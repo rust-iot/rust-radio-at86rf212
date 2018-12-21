@@ -13,7 +13,7 @@ A rust driver for the Atmel AT86RF212 Sub 1GHz ISM band radio IC.
 
 ## Testing
 
-HITL Testing is run via buildkite using a Raspberry Pi model 3 with an IO shield and a pair of [XPlained PRO Zigbit + ATRF212B-0-U](http://ww1.microchip.com/downloads/en/devicedoc/atmel-42270-wireless-zigbit-atzb-rf-212b-0-u_datasheet.pdf) modules.
+HITL Testing is run via buildkite using a Raspberry Pi model 3 with an IO shield and a pair of [XPlained PRO Zigbit + ATRF212B-0-U](http://ww1.microchip.com/downloads/en/devicedoc/atmel-42270-wireless-zigbit-atzb-rf-212b-0-u_datasheet.pdf) modules. The RPi pins are configured in [rpi_setup.sh](rpi_setup.sh), and the environment configured in [rpi_env.sh](rpi_env.sh) (though these are both injected into the test system independently).
 
 ![at86rf212-test-setup](https://user-images.githubusercontent.com/860620/50320284-7cb02b00-0530-11e9-811f-2d256d614a57.jpg)
 
