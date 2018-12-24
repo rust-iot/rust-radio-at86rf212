@@ -127,9 +127,9 @@ fn test_devices() {
     println!("Testing send/receive");
     
     // Start RX
-    radio0.start_rx(0).expect("Error starting receive");
-    let val = radio0.get_state().expect("Failed fetching radio state");
-    assert_eq!(TrxStatus::RX_ON as u8, val, "Radio state (RX_ON)");
+    radio0.start_rx(1).expect("Error starting receive");
+    let val = radio0.get_state().expect("Failed fetching radio0 state");
+    assert_eq!(TrxStatus::RX_ON as u8, val, "Radio state error (RX_ON)");
 
     // Start send
     radio1.start_tx(&[0x11, 0x22, 0x33]).expect("Error starting TX");

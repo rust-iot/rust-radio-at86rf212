@@ -13,7 +13,4 @@ version = "0.2.2"
 features = ["unproven"]
 
 [dev-dependencies]
-linux-embedded-hal = "0.2.1"
-
-[patch.crates-io]
-linux-embedded-hal = { git = "https://github.com/rust-embedded/linux-embedded-hal" }
+linux-embedded-hal = "0.2.2"
