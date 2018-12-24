@@ -1,6 +1,6 @@
 # rust-radio-at86rf212
 
-A rust driver for the Atmel AT86RF212 Sub 1GHz ISM band radio IC.
+A rust driver for the Atmel AT86RF212 Sub 1GHz ISM band radio IC, based on [ryankurte/libat86rf212](https://github.com/ryankurte/libat86rf212).
 
 ## Status
 
@@ -23,6 +23,8 @@ A rust driver for the Atmel AT86RF212 Sub 1GHz ISM band radio IC.
 - [ ] Auto Retransmit
 - [ ] Interrupt Mode
 - [ ] DMA support
+- [ ] Unit testing
+- [x] Integration Testing
 
 ## Testing
 
