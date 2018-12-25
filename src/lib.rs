@@ -10,7 +10,8 @@
 
 extern crate embedded_hal as hal;
 
-extern crate nb;
+extern crate radio;
+use radio::Registers;
 
 use hal::blocking::{spi, delay};
 use hal::digital::{OutputPin};
@@ -53,7 +54,7 @@ pub const MODE: Mode = Mode {
 };
 
 /// AT86RF212 device object
-pub struct AT86RF212<SPI, OUTPUT, DELAY> {
+pub struct At86Rf212<SPI, OUTPUT, DELAY> {
     spi: SPI,
     reset: OUTPUT,
     cs: OUTPUT,
@@ -62,14 +63,14 @@ pub struct AT86RF212<SPI, OUTPUT, DELAY> {
     auto_crc: bool,
 }
 
-impl<E, SPI, OUTPUT, DELAY> AT86RF212<SPI, OUTPUT, DELAY>
+impl<E, SPI, OUTPUT, DELAY> At86Rf212<SPI, OUTPUT, DELAY>
 where
     SPI: spi::Transfer<u8, Error = E> + spi::Write<u8, Error = E>,
     OUTPUT: OutputPin,
     DELAY: delay::DelayMs<u32>,
 {
     pub fn new(spi: SPI, reset: OUTPUT, cs: OUTPUT, sleep: OUTPUT, delay: DELAY) -> Result<Self, At86rf212Error<E>> {
-        let mut at86rf212 = AT86RF212 { spi, reset, cs, sleep, delay, auto_crc: true };
+        let mut at86rf212 = At86Rf212 { spi, reset, cs, sleep, delay, auto_crc: true };
 
         // Disable slee mode
         at86rf212.sleep.set_low();
@@ -125,51 +126,6 @@ where
         // TODO: Enable desired interrupts
 
         Ok(at86rf212)
-    }
-
-    /// Read data from a specified register address
-    /// This consumes the provided input data array and returns a reference to this on success
-    pub fn reg_read<'a>(&mut self, reg: Register) -> Result<u8, At86rf212Error<E>> {
-        // Setup read command
-        let mut buf: [u8; 2] = [device::REG_READ_FLAG as u8 | reg as u8, 0];
-        // Assert CS
-        self.cs.set_low();
-        // Transfer data
-        let res = self.spi.transfer(&mut buf);
-        // Clear CS
-        self.cs.set_high();
-        // Return result
-        match res {
-            Ok(v) => Ok(v[1]),
-            Err(e) => Err(At86rf212Error::SPI(e)),
-        }
-    }
-
-    /// Write data to a specified register address
-    pub fn reg_write(&mut self, reg: Register, value: u8) -> Result<(), At86rf212Error<E>> {
-        // Setup write command
-        let buf: [u8; 2] = [device::REG_WRITE_FLAG as u8 | reg as u8, value];
-        // Assert CS
-        self.cs.set_low();
-        // Write command
-        let res = self.spi.write(&buf);
-        // Clear CS
-        self.cs.set_high();
-        // Return result
-        match res {
-            Ok(_) => Ok(()),
-            Err(e) => Err(At86rf212Error::SPI(e)),
-        }
-    }
-
-    /// Update a portion of a register with the provided mask and value
-    /// Note that shifting is not automatically applied
-    pub fn reg_update(&mut self, reg: Register, mask: u8, value: u8) -> Result<(), At86rf212Error<E>> {
-        let mut data = self.reg_read(reg.clone())?;
-        data &= !mask;
-        data |= mask & value;
-        self.reg_write(reg, data)?;
-        Ok(())
     }
 
     /// Read a frame from the device
@@ -318,24 +274,6 @@ where
         Ok(())
     }
 
-    pub fn start_rx(&mut self, channel: u8) -> Result<(), At86rf212Error<E>> {
-        // Set to IDLE
-        self.set_state_blocking(TrxCmd::TRX_OFF)?;
-
-        // Set channel
-        self.set_channel(channel)?;
-
-        // Clear interrupts
-        self.get_irq_status()?;
-
-        // Enable PLL
-        self.enable_pll()?;
-
-        // Enable RX
-        self.set_state_blocking(TrxCmd::RX_ON)?;
-
-        Ok(())
-    }
 
     fn enable_pll(&mut self) -> Result<(), At86rf212Error<E>> {
         // Send PLL on cmd
@@ -352,7 +290,7 @@ where
         Err(At86rf212Error::PLLLock)
     }
 
-    pub fn check_tx_rx(&mut self) -> Result<bool, At86rf212Error<E>> {
+    fn check_tx_rx(&mut self) -> Result<bool, At86rf212Error<E>> {
         let v = self.get_irq_status()?;
         if (v & regs::IRQ_STATUS_IRQ_3_TRX_END_MASK) != 0 {
             Ok(true)
@@ -361,7 +299,7 @@ where
         }
     }
 
-    pub fn get_rx<'a>(&mut self, data: &'a mut [u8]) -> Result<&'a [u8], At86rf212Error<E>>{
+    fn get_rx<'a>(&mut self, data: &'a mut [u8]) -> Result<&'a [u8], At86rf212Error<E>>{
         // Fetch frame length
         let mut buf = [0u8; 1];
         let len = self.read_frame(&mut buf)?[0] as usize;
@@ -377,17 +315,131 @@ where
         self.read_frame(data)
     }
 
-    pub fn start_tx(&mut self, data: &[u8]) -> Result<(), At86rf212Error<E>>{
+}
+
+impl<E, SPI, OUTPUT, DELAY> radio::Registers for At86Rf212<SPI, OUTPUT, DELAY>
+where
+    SPI: spi::Transfer<u8, Error = E> + spi::Write<u8, Error = E>,
+    OUTPUT: OutputPin,
+    DELAY: delay::DelayMs<u32>,
+{
+    type Error = At86rf212Error<E>;
+    type Register = Register;
+
+    fn reg_read<'a>(&mut self, reg: Self::Register) -> Result<u8, Self::Error>{
+        // Setup read command
+        let mut buf: [u8; 2] = [device::REG_READ_FLAG as u8 | reg as u8, 0];
+        // Assert CS
+        self.cs.set_low();
+        // Transfer data
+        let res = self.spi.transfer(&mut buf);
+        // Clear CS
+        self.cs.set_high();
+        // Return result
+        match res {
+            Ok(v) => Ok(v[1]),
+            Err(e) => Err(At86rf212Error::SPI(e)),
+        }
+    }
+
+    fn reg_write(&mut self, reg: Self::Register, value: u8) -> Result<(), Self::Error>{
+        // Setup write command
+        let buf: [u8; 2] = [device::REG_WRITE_FLAG as u8 | reg as u8, value];
+        // Assert CS
+        self.cs.set_low();
+        // Write command
+        let res = self.spi.write(&buf);
+        // Clear CS
+        self.cs.set_high();
+        // Return result
+        match res {
+            Ok(_) => Ok(()),
+            Err(e) => Err(At86rf212Error::SPI(e)),
+        }
+    }
+    
+    fn reg_update(&mut self, reg: Self::Register, mask: u8, value: u8) -> Result<(), Self::Error>{
+        let mut data = self.reg_read(reg.clone())?;
+        data &= !mask;
+        data |= mask & value;
+        self.reg_write(reg, data)?;
+        Ok(())
+    }
+
+}
+
+impl<E, SPI, OUTPUT, DELAY> radio::Transmit for At86Rf212<SPI, OUTPUT, DELAY>
+where
+    SPI: spi::Transfer<u8, Error = E> + spi::Write<u8, Error = E>,
+    OUTPUT: OutputPin,
+    DELAY: delay::DelayMs<u32>,
+{
+    type Error = At86rf212Error<E>;
+
+    fn start_transmit(&mut self, channel: u16, data: &[u8]) -> Result<(), Self::Error>{
         // Disable TRX
         self.set_state_blocking(TrxCmd::TRX_OFF)?;
         // Clear IRQs
         self.get_irq_status()?;
+        // Set channel
+        self.set_channel(channel as u8)?;
         // Enable the PLL
         self.enable_pll()?;
         // Write data to buffer
         self.write_frame(data)?;
         // Set TX mode
-        self.set_state_blocking(TrxCmd::TX_START)
+        self.set_state_blocking(TrxCmd::TX_START)?;
+
+        Ok(())
     }
 
+    fn check_transmit(&mut self) -> Result<bool, Self::Error>{
+        // TODO: check we're in the TX state
+
+        self.check_tx_rx()
+    }
+}
+
+impl<E, SPI, OUTPUT, DELAY> radio::Receive for At86Rf212<SPI, OUTPUT, DELAY>
+where
+    SPI: spi::Transfer<u8, Error = E> + spi::Write<u8, Error = E>,
+    OUTPUT: OutputPin,
+    DELAY: delay::DelayMs<u32>,
+{
+    type Error = At86rf212Error<E>;
+    type Info = ();
+
+    fn start_receive(&mut self, channel: u16) -> Result<(), Self::Error> {
+        // Set to IDLE
+        self.set_state_blocking(TrxCmd::TRX_OFF)?;
+
+        // Set channel
+        self.set_channel(channel as u8)?;
+
+        // Clear interrupts
+        self.get_irq_status()?;
+
+        // Enable PLL
+        self.enable_pll()?;
+
+        // Enable RX
+        self.set_state_blocking(TrxCmd::RX_ON)?;
+
+        Ok(())
+    }
+
+    fn get_received<'a>(&mut self, buff: &'a mut [u8]) -> Result<Option<(&'a[u8], Self::Info)>, Self::Error> {
+        // TODO: check we're in the RX state
+
+        // Check whether RX has completed
+        if !self.check_tx_rx()? {
+            return Ok(None);
+        }
+        // Fetch RX data
+        let data = self.get_rx(buff)?;
+        
+        // TODO: parse info from data
+
+        Ok(Some((data, ())))
+    }
 }

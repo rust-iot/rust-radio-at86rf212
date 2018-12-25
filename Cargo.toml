@@ -1,12 +1,12 @@
 [package]
 name = "radio-at86rf212"
 description = "Driver for the Atmel AT86RF212 Sub 1GHz ISM band radio IC"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Ryan Kurte <ryankurte@gmail.com>"]
 license = "GPL-3.0-or-later"
 
 [dependencies]
-nb = "0.1.1"
+radio = "0.1.0"
 
 [dependencies.embedded-hal]
 version = "0.2.2"

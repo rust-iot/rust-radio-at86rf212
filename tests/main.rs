@@ -1,4 +1,4 @@
-//! AT86RF212 Radio Driver 
+//! At86Rf212 Radio Driver 
 //! HITL testing
 //! 
 //! Copyright 2018 Ryan Kurte
@@ -13,8 +13,11 @@ extern crate linux_embedded_hal;
 use linux_embedded_hal::{Spidev, Pin, Delay};
 use linux_embedded_hal::spidev::{SpidevOptions, SPI_MODE_0};
 
+extern crate radio;
+use radio::{Transmit, Receive, Registers};
+
 extern crate radio_at86rf212;
-use radio_at86rf212::{AT86RF212, Register, TrxCmd, TrxStatus};
+use radio_at86rf212::{At86Rf212, Register, TrxCmd, TrxStatus};
 use radio_at86rf212::device::defaults;
 
 #[test]
@@ -76,10 +79,10 @@ fn test_devices() {
 
     println!("Connecting to devices");
    
-    let mut radio0 = AT86RF212::new(spi0, reset0, cs0, sleep0, Delay{})
+    let mut radio0 = At86Rf212::new(spi0, reset0, cs0, sleep0, Delay{})
         .expect("Failed to initialise radio0");
 
-    let mut radio1 = AT86RF212::new(spi1, reset1, cs1, sleep1, Delay{})
+    let mut radio1 = At86Rf212::new(spi1, reset1, cs1, sleep1, Delay{})
 	.expect("Failed to initialise radio1");
 
     println!("Test initial configuration");
@@ -127,24 +130,28 @@ fn test_devices() {
     println!("Testing send/receive");
     
     // Start RX
-    radio0.start_rx(1).expect("Error starting receive");
-    let val = radio0.get_state().expect("Failed fetching radio0 state");
+    let ch = 1;
+    radio0.start_receive(ch).expect("Error starting receive");
+    let val = radio0.get_state().expect("Failed fetching radio state");
     assert_eq!(TrxStatus::RX_ON as u8, val, "Radio state error (RX_ON)");
 
     // Start send
-    radio1.start_tx(&[0x11, 0x22, 0x33]).expect("Error starting TX");
+    let send = [0x11, 0x22, 0x33];
+    radio1.start_transmit(ch, &send).expect("Error starting TX");
 
     // Poll on tx and rx complete
     let mut sent = false;
     let mut received = false;
+    let mut buff = [0u8; 1024];
+
     for _i in 0..10 {
-        if radio0.check_tx_rx().expect("Failed checking radio rx complete") {
-            println!("Receive complete");
-            received = true;
-        }
-        if radio1.check_tx_rx().expect("Failed checking radio tx complete") {
-            println!("Send complete");
+        if radio1.check_transmit().expect("Failed checking radio tx complete") {
+            println!("Send complete ({:?})", send);
             sent = true;
+        }
+        if let Some((recv, _)) = radio0.get_received(&mut buff).expect("Failed checking radio rx complete") {
+            println!("Receive complete ({:?})", recv);
+            received = true;
         }
         thread::sleep(Duration::from_millis(100));
     }
