@@ -14,3 +14,12 @@ features = ["unproven"]
 
 [dev-dependencies]
 linux-embedded-hal = "0.2.2"
+remote-hal = "0.5.0"
+futures = "0.1.26"
+tokio = { version="0.1.18" }
+futures-macro-await = "0.2.1"
+tokio-async-await = "0.1.6"
+simplelog = "0.5.3"
+
+[patch.crates-io]
+remote-hal = { path = "../rust-remote-hal" }

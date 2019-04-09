@@ -3,15 +3,30 @@
 //! 
 //! Copyright 2018 Ryan Kurte
 
-use std::env;
-use std::thread;
+//#![feature(await_macro, futures_api)]
+
+use std::{env, fmt, thread};
 use std::time::Duration;
 
+extern crate tokio;
+use tokio::runtime::Builder;
+
+extern crate futures;
+use futures::prelude::*;
+
+extern crate simplelog;
+use simplelog::{TermLogger, LevelFilter, Config as LogConfig};
+
 extern crate embedded_hal;
+use embedded_hal::{digital, blocking::spi};
 
 extern crate linux_embedded_hal;
-use linux_embedded_hal::{Spidev, Pin, Delay};
-use linux_embedded_hal::spidev::{SpidevOptions, SPI_MODE_0};
+use linux_embedded_hal::{Delay};
+
+extern crate remote_hal;
+use remote_hal::common::{PinMode, SpiMode};
+use remote_hal::{manager::Manager, remote::Client, remote_addr};
+use remote_hal::remote::{InitRequest};
 
 extern crate radio;
 use radio::{Transmit, Receive, Registers};
@@ -20,62 +35,86 @@ extern crate radio_at86rf212;
 use radio_at86rf212::{At86Rf212, Register, TrxCmd, TrxStatus};
 use radio_at86rf212::device::defaults;
 
+
 #[test]
 fn test_devices() {
-    let spi0_name = env::var("RADIO0_SPI")
-        .expect("RADIO0_SPI environmental variable undefined");
 
-    let spi1_name = env::var("RADIO1_SPI")
-	.expect("RADIO1_SPI environmental variable undefined");
+    let _ = TermLogger::init(LevelFilter::Info, LogConfig::default()).unwrap();
 
-    let cs0_name = env::var("RADIO0_CS")
-        .expect("RADIO0_CS environmental variable undefined");
-    let cs1_name = env::var("RADIO1_CS")
-        .expect("RADIO1_CS environmental variable undefined");
+    let spi0_name = env::var("RADIO0_SPI").expect("RADIO0_SPI environmental variable undefined");
 
-    let reset0_name = env::var("RADIO0_RESET")
-        .expect("RADIO0_RESET environmental variable undefined");
-    let reset1_name = env::var("RADIO1_RESET")
-        .expect("RADIO1_RESET environmental variable undefined");
+    let spi1_name = env::var("RADIO1_SPI").expect("RADIO1_SPI environmental variable undefined");
 
-    let sleep0_name = env::var("RADIO0_SLEEP")
-        .expect("RADIO0_SLEEP environmental variable undefined");
-    let sleep1_name = env::var("RADIO1_SLEEP")
-        .expect("RADIO1_SLEEP environmental variable undefined");
+    let cs0_name = env::var("RADIO0_CS").expect("RADIO0_CS environmental variable undefined");
+    let cs1_name = env::var("RADIO1_CS").expect("RADIO1_CS environmental variable undefined");
 
-    println!("Connecting to peripherals");
+    let reset0_name = env::var("RADIO0_RESET").expect("RADIO0_RESET environmental variable undefined");
+    let reset1_name = env::var("RADIO1_RESET").expect("RADIO1_RESET environmental variable undefined");
 
-    let mut spi0 = Spidev::open(spi0_name)
-        .expect("Failed to open SPI0");
+    let sleep0_name = env::var("RADIO0_SLEEP").expect("RADIO0_SLEEP environmental variable undefined");
+    let sleep1_name = env::var("RADIO1_SLEEP").expect("RADIO1_SLEEP environmental variable undefined");
 
-    let mut spi1 = Spidev::open(spi1_name)
-	    .expect("Failed to open SPI1");
+    let mut rt = Builder::new()
+    .blocking_threads(2)
+    .core_threads(2)
+    .build()
+    .unwrap();
 
-    let cs0 = Pin::from_path(cs0_name)
-        .expect("Failed to open CS0");
-    let cs1 = Pin::from_path(cs1_name)
-        .expect("Failed to open CS1");
+    let worker = futures::lazy(move || {
 
-    let reset0 = Pin::from_path(reset0_name)
-        .expect("Failed to open RESET0");
-    let reset1 = Pin::from_path(reset1_name)
-        .expect("Failed to open RESET1");
+        Client::new(remote_addr()).map_err(|e| panic!(e) )
+        .and_then(move |mut c|  {
 
-    let sleep0 = Pin::from_path(sleep0_name)
-        .expect("Failed to open SLEEP0");
-    let sleep1 = Pin::from_path(sleep1_name)
-        .expect("Failed to open SLEEP1");
+            let reqs = vec![
+                InitRequest::Spi{path: spi0_name, baud: 20_000, mode: SpiMode::Mode0},
+                InitRequest::Spi{path: spi1_name, baud: 20_000, mode: SpiMode::Mode0},
+                InitRequest::Pin{path: reset0_name, mode: PinMode::Output},
+                InitRequest::Pin{path: reset1_name, mode: PinMode::Output},
+                InitRequest::Pin{path: cs0_name, mode: PinMode::Output},
+                InitRequest::Pin{path: cs1_name, mode: PinMode::Output},
+                InitRequest::Pin{path: sleep0_name, mode: PinMode::Output},
+                InitRequest::Pin{path: sleep1_name, mode: PinMode::Output},
+            ];
 
-    println!("Configuring peripherals");
- 
-    let options = SpidevOptions::new()
-         .bits_per_word(8)
-         .max_speed_hz(20_000)
-         .mode(SPI_MODE_0)
-         .build();
+            c.init_all(&reqs).map(move |devs| (c, devs) )
+        })
+        .and_then(move |(c, mut devs)| {
 
-    spi0.configure(&options).unwrap();
-    spi1.configure(&options).unwrap();
+            println!("Connecting to peripherals");
+
+            devs.reverse();
+            let spi0 = devs.pop().unwrap().spi().unwrap();
+            let spi1 = devs.pop().unwrap().spi().unwrap();
+
+            let reset0 = devs.pop().unwrap().pin().unwrap();
+            let reset1 = devs.pop().unwrap().pin().unwrap();
+
+            let cs0 = devs.pop().unwrap().pin().unwrap();
+            let cs1 = devs.pop().unwrap().pin().unwrap();
+
+            let sleep0 = devs.pop().unwrap().pin().unwrap();
+            let sleep1 = devs.pop().unwrap().pin().unwrap();
+
+
+            println!("Running tests");
+
+            run_tests(spi0, spi1, reset0, reset1, cs0, cs1, sleep0, sleep1);
+
+            Ok(())
+
+        })
+
+    });
+    
+    rt.block_on(worker.map(|_| () ).map_err(|e| panic!(e) )).unwrap();
+}
+
+fn run_tests<S, O, E>(spi0: S, spi1: S, reset0: O, reset1: O, cs0: O, cs1: O, sleep0: O, sleep1: O) 
+where
+    S: spi::Transfer<u8, Error=E> + spi::Write<u8, Error=E>,
+    O: digital::OutputPin,
+    E: fmt::Debug,
+{
 
     println!("Connecting to devices");
    
@@ -158,5 +197,5 @@ fn test_devices() {
 
     assert!(sent, "Send not completed");
     assert!(received, "Receive not completed")
-
 }
+
