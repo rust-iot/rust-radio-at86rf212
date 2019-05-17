@@ -21,6 +21,7 @@ use radio_at86rf212::{At86Rf212, Register, TrxCmd, TrxStatus};
 use radio_at86rf212::device::defaults;
 
 #[test]
+#[ignored]
 fn test_devices() {
     let spi0_name = env::var("RADIO0_SPI")
         .expect("RADIO0_SPI environmental variable undefined");
