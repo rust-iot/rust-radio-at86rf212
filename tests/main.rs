@@ -1,7 +1,7 @@
 //! At86Rf212 Radio Driver 
 //! HITL testing
 //! 
-//! Copyright 2018 Ryan Kurte
+// Copyright 2018 Ryan Kurte
 
 use std::env;
 use std::thread;
@@ -14,7 +14,7 @@ use linux_embedded_hal::{Spidev, Pin, Delay};
 use linux_embedded_hal::spidev::{SpidevOptions, SPI_MODE_0};
 
 extern crate radio;
-use radio::{Transmit, Receive, Registers};
+use radio::{Transmit, Receive, Channel, Registers};
 
 extern crate radio_at86rf212;
 use radio_at86rf212::{At86Rf212, Register, TrxCmd, TrxStatus};
@@ -132,13 +132,15 @@ fn test_devices() {
     
     // Start RX
     let ch = 1;
-    radio0.start_receive(ch).expect("Error starting receive");
+    radio0.set_channel(&ch);
+    radio0.start_receive().expect("Error starting receive");
     let val = radio0.get_state().expect("Failed fetching radio state");
     assert_eq!(TrxStatus::RX_ON as u8, val, "Radio state error (RX_ON)");
 
     // Start send
     let send = [0x11, 0x22, 0x33];
-    radio1.start_transmit(ch, &send).expect("Error starting TX");
+    radio1.set_channel(&ch);
+    radio1.start_transmit(&send).expect("Error starting TX");
 
     // Poll on tx and rx complete
     let mut sent = false;
@@ -146,14 +148,19 @@ fn test_devices() {
     let mut buff = [0u8; 1024];
 
     for _i in 0..10 {
+        // Check TX state
         if radio1.check_transmit().expect("Failed checking radio tx complete") {
             println!("Send complete ({:?})", send);
             sent = true;
         }
-        if let Some((recv, _)) = radio0.get_received(&mut buff).expect("Failed checking radio rx complete") {
-            println!("Receive complete ({:?})", recv);
+        // Check RX state
+        if radio0.check_receive(false).expect("error polling on radio receive") {
+            // Fetch received packet
+            let n = radio0.get_received(&mut (), &mut buff).expect("Failed checking radio rx complete");
+            println!("Receive complete ({:?})", &buff[..n]);
             received = true;
         }
+
         thread::sleep(Duration::from_millis(100));
     }
 

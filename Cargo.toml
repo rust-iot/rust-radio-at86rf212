@@ -6,7 +6,7 @@ authors = ["Ryan Kurte <ryankurte@gmail.com>"]
 license = "GPL-3.0-or-later"
 
 [dependencies]
-radio = "0.1.0"
+radio = "0.2.0"
 
 [dependencies.embedded-hal]
 version = "0.2.2"
